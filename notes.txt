@@ -1,0 +1,97 @@
+In yaml config files
+
+make a config files for kubernetes, you're creating not exaclty a container - you're makign an Object
+
+Kubectl pares both configs and creates two Objects
+
+Objects
+  - a thing that exists inside of the K8s cluster
+  - Objects can beStatefulSet, REplicaController Pod, Service
+
+Kinds of Objects 
+ - Pod : used to run a container
+ - Service: Sets up networking stuff for k8s cluster
+
+Client-pod.yaml  Config file (Pod)
+ - 'metadata: labels' - are important way to tag Objects
+ - apiVersion v1 opens up access to a predefined set of Object types
+    - Each API Version defiens a different set of 'objects' we can use
+    - First you have to figure out what kind of Object you want to create,
+      look up that api version, then specify that API version
+ - 'Kind' specifies the type of object you are creating with it
+ - 'spec:containers:' specifies the containers running inside the Pod spec. kinda similar to the docker-compose spec for containers
+    - The port mapping in 'spec:containers' does not allow access to Port 3000. 
+      That's the purpose of the networking config file/ Service Object
+
+Client-node-port.yaml Config File (Service)
+ - 'spec:type' specifies the subtype of the Service
+Node(Pod(Container))
+- 'spec:selector: - specifies every Object with these selectors, and exposes its ports to the outside world
+- 'spec:ports':
+    - port: a port that a different container inside the cluster could use to access this pod/container (multi-client)
+    - targetPort: port inside of the Pod you want to open up traffic to
+    - nodePort: the port we type into our browser to access the Pod
+
+
+Deploying Objects 
+ - Command `kubectl apply -f client-pod.yaml` `kubectl apply -f client-node-port.yaml`
+
+
+ Pods
+  - A grouping of containers with a very common purpose
+  - There's no ability run a naked container in k8s
+  - The smallest hing you can deploy is a Pod   
+    - Node(Pod(Container))
+  - Pods are meant to group containers with a very similar purpose
+    - Containers that are very tightly coupled 
+    - Example: A Pod containing Postgres, a Logger, and a backup manager Container
+        - If the Postgres goes down, the logger/backup containers have no purpose
+        - Very close integration, so contain it in a Pod
+    - Reasons you'd run more than one container in a pod is if they're tightly integrated like this Example
+
+Services
+ - sets up some amount of networking inside a k8s cluster
+ - Services have subtypes:
+    - ClusterIP
+    - NodePort
+      - exposes a Container to the outside world (Only good for dev purposes!)
+      - Kubernetes Node(Kube-Proxy -> NodePort -> Pod('multi-client' container))
+    - LoadBalancer
+    - Ingress
+
+
+Imperative vs Declarative Updaates?
+ - Use declarative (There should be X) and not imperative (Create X)
+
+
+Declarative
+ - Update teh config file that originally created the pod
+ - If you update a config file - it will know which Pod to update
+    - Config Files has a Name/Kind and image associated to it 
+    - Name and Kind are Unique IDs together. Don't change these
+    - If you change anything else in the config file, kubectl will update the object rather than create a brand new Object
+    - Pod updates may not add or remove containers
+
+kubectl apply -f client-pod.yaml
+
+Looking inside pods / Inspecting Pods
+  - use command `kubectl describe <object type> <object name>`
+  - omit name to get details about all objects of that type
+  - shows all events that happened inside that pod
+  - You can see the image(s) being used on that pod
+
+
+Limitiations updating pods - and using "Deployments"
+ - You can't update fields "port", "name", or "containers" if the type of Object is a Pod
+ - You can use the type "Deployment" to achieve this
+    - Deployment Objects: Runs a set of identical pods (one or more Pods with the exact same set of containers),
+      ensuring they have the correct config
+ - You can use Deployments to achieve the same functionality as just a Pod, since it can run just one Pod
+
+ - In practice,     
+    - Pods are good for one-off dev purposes and rarely used in production.
+    - Deployments are good for dev and for production
+
+- Deployments let you update fields on (a set of) Pods that you cannot update if it was just a Pod
+
+
