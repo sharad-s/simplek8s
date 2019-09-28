@@ -1,8 +1,9 @@
 In yaml config files
+make a config files for kubernetes, you're not exactly creating a Docker container - you're makign an "Object"
 
-make a config files for kubernetes, you're creating not exaclty a container - you're makign an Object
-
-Kubectl pares both configs and creates two Objects
+Deploying Objects 
+ - Command `kubectl apply -f client-pod.yaml` `kubectl apply -f client-node-port.yaml`
+ - Kubectl parses both configs and creates two Objects - one of type Pod and one of type Service
 
 Objects
   - a thing that exists inside of the K8s cluster
