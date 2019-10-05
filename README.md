@@ -64,10 +64,13 @@ Kubectl pares both configs and creates two Objects
  - Use declarative (There should be X) and not imperative (Create X)
 
 ## Declarative Updaes\
- - Update teh config file that originally created the pod\
+ - Updates the config file that originally created the pod\
+
  - If you update a config file - it will know which Pod to update\
-    - Config Files has a Name/Kind and image associated to it\
+    - Config Files has a Name, Type and image associated to it\
     - Name and Kind are Unique IDs together. Don't change these\
+      - every time you update a config file, if the Name and Kind are the same, KubeCtl will update all pods with the same Name and Kind
+      - if the Name and Kind are different from the file previous to the update - KubeCtl will create a new Pod
     - If you change anything else in the config file, kubectl will update the object rather than create a brand new Object\
     - Pod updates may not add or remove containers
  - `kubectl apply -f client-pod.yaml` to update with new config
@@ -78,7 +81,7 @@ Kubectl pares both configs and creates two Objects
   - shows all events that happened inside that pod\
   - You can see the image(s) being used on that pod
 
-## Limitiations updating pods - and using "Deployments"\
+## Limitiations updating pods - and introducing "Deployments"\
  - You can't update fields "port", "name", or "containers" if the type of Object is a Pod\
  - You can use the type "Deployment" to achieve this\
     - Deployment Objects: Runs a set of identical pods (one or more Pods with the exact same set of containers),\
@@ -90,3 +93,59 @@ Kubectl pares both configs and creates two Objects
     - Deployments are good for dev and for production
 
 - Deployments let you update fields on (a set of) Pods that you cannot update if it was just a Pod
+
+
+## Creating Deployment config files
+
+ - "spec:replicas" details how many Pods to create using the "spec:template"
+ - "spec:template" lists out the config for every single pod that is contained by this deployment. it's like the exact configuration for a pod. it has its own "metadata" and "spec"
+ - "spec:selector" matches labels to make updates to pods
+  - labels are unique by key and value. label "component: web" is unique from label "component: notweb" or label "notcomponent: web"
+
+
+## Removing existing Object
+`kubectl delete -f <config file>`
+- unfortunately this is imperative by default. declarative might be more wprk
+ 
+
+## Updating Deployment config files
+`kubectl apply -f client-deployemtn.yaml` 
+to apply a new deployment or update existing deployment
+
+`kubectl get deployments` to view existing deployemnts
+`kubectl get pods` to view existing pods
+
+
+## Why use Services?
+ Every single pod you create gets its own randomly assigned IP address that is internal to the virtual machine. 
+   -  If the pod gets changed for any reason - it might get an entirely new IP address
+Pods are coming adn going all the time - Services abstract away the difficultys of connecting to Pods
+
+
+
+## Updating Deployment Images
+ - Must be done imperatively via kubectl
+ - Tag your Docker image with a version number `sharadshekar:multi-client:v4` and push it up to DOckerhub
+ - Run a kubectl command to imperatively force the deployment to use the new image version
+
+`kubectl set image <object type>/<object name> <container_name>=<new_image_to_use>`
+`kubectl set image deployment/client-deployment client=sharadshekar/multi-client:v5`
+
+## Configuring Docker CLI
+ - you have a copy of Docker unning on your computer, and a second copy of Docker running in minikubeVM
+ - Reconfiguring your local copy of docker?
+  - run `eval $(minikube docker-env`)` 
+  - just `minikube docker-env` will print out env variables inside the minikube instance
+    - This only configures you current terminal window (current bash session)
+ - Why mess with Docker in the node?
+  - use all the same debugging techniques learned with Docker CLI
+    - `docker ps`
+    - `docker logs <id>`
+    - `docker exec -it <id> sh`
+    - You can do this with kubectl too
+      - `kubectl get pods`
+      - `kubectl exect -it <pod_name> sh`
+  - Manually kill containers to test Kubernetes's ability to self-heal
+  - Delete cached images inside the node
+
+
